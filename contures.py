@@ -1,5 +1,5 @@
 import cv2
-
+import numpy as np
 def count_circles(image):
     obj = {}
     collisions = 0
@@ -29,90 +29,90 @@ def count_circles(image):
     return collisions
 
                 
-def find_circles(number, obj={}):
-    if number < 5:
-        img = cv2.imread(f'ideal_{number}.jpg')
+def find_circles(img):
 
-        # cv2.imshow('img', img)
+    circles = 0
+    # img = cv2.imread(img)
 
-        # hls
-        color = (
-            ( 74,  76,  76),
-            (180, 255, 255),
-        )
+    # hsv
+    # color = (
+    #     ( 0,  0,  0),
+    #     (40, 40, 40)
+    # )
 
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_mask = cv2.inRange(img_rgb, color[0], color[1])
-        # cv2.imshow('img', img_mask)
+    # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # contours, _ = cv2.findContours(img_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Выделим контуры из полученной маски.
-        # Данная функция возвращает массив контуров, а также их иерархию.
-        #
-        # В аргументах этой функции помимо маски, также указывается
-        # режим определения иерархии (установим такой режим, чтобы
-        # оставался лишь внешний контур, а все вложенные будут отсекаться),
-        # а также метод аппроксимации (упрощение контура, чтобы исключить
-        # избыточные точки из каждого контура).
+    drawing = img.copy()
+    # cv2.drawContours(drawing, contours, -1, (255,255,255), 1)
 
-        contours, _ = cv2.findContours(img_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # Нарисуем выделенные контуры. Указываем изображение, на котором
-        # будем рисовать, массив контуров, индекс контура (можно задать
-        # значение индекса как -1, чтобы отобразить все контуры в массиве),
-        # а также цвет и толщину обводки.
-
-        drawing = img.copy()
-        cv2.drawContours(drawing, contours, -1, (255,255,255), 1)
-
-        circles = len(contours)
-
-        obj[number] = circles
-
-        if contours:
-            # Можно было сделать цикл вида "for cnt in contours",
-            # но здесь нам нужно иметь индекс текущего контура.
-            for i in range(len(contours)):
-                cnt = contours[i]
-
-                # С помощью данного условия, мы можем отсеять
-                # слишком маленькие контуры (т.е. такие контуры,
-                # у которых слишком маленькая площадь).
-                if cv2.contourArea(cnt) < 50:
-                    continue
-                cv2.drawContours(drawing, contours, i, (0,0,255), 2)
-
-                # Определим геометричсекий центр конутра
-                # с помощью т.н. "моментов изображения"
-                moments = cv2.moments(cnt)
-                try:
-                    x = int(moments['m10'] / moments['m00'])
-                    y = int(moments['m01'] / moments['m00'])
-                    cv2.circle(drawing, (x,y), 4, (0,255,255), -1)
-                # у нас может случится деление на ноль, и это надо предусмотреть.
-                except ZeroDivisionError:
-                    pass
-                
-                
-                # cv2.imshow('drawing', drawing)
-                cv2.imwrite(f'{number}_circles.jpg', drawing)
-                # print(count_circles(drawing))
-                cv2.waitKey(0)
-        object = find_circles(number+1, obj)
-        return object
-    else:
-        circles_k_max = 1
-        for k,v in obj.items():
-            if v > obj[circles_k_max]:
-                circles_k_max = k
-
-        circles_k_min = 1
-        for k,v in obj.items():
-            if v < obj[circles_k_min]:
-                circles_k_min = k
-        return {'max': circles_k_max, 'min': circles_k_min}
+    # circles = len(contours)
 
 
-obj = find_circles(1)
+    # if contours:
+    #     for i in range(len(contours)):
+    #         cnt = contours[i]
+            
+    #         if cv2.contourArea(cnt) < 50:
+    #             continue
+    #         cv2.drawContours(drawing, contours, i, (0,0,255), 2)
 
+    #         moments = cv2.moments(cnt)
+    #         try:
+    #             x = int(moments['m10'] / moments['m00'])
+    #             y = int(moments['m01'] / moments['m00'])
+    #             cv2.circle(drawing, (x,y), 4, (0,255,255), -1)
+    #         except ZeroDivisionError:
+    #             pass
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    # подбираем параметры цветового фильтра для выделения
+    # нашего объекта (указанные числовые значения могут
+    # отличаться)
+    hsv_min = np.array((0, 0, 0), np.uint8)
+    hsv_max = np.array((255, 255, 50), np.uint8)
+    # применяем цветовой фильтр к исходному изображению,
+    # результат записываем в переменную hsv_msk
+    hsv_msk = cv2.inRange( hsv_img, hsv_min, hsv_max ) 
+    # ищем контуры и запqqисываем их в переменную contours
+    # в режиме поиска всех контуров без группировки
+    # cv2.RETR_LIST, для хранения контуров используем
+    # метод cv2.CHAIN_APPROX_SIMPLE
+    contours, _ = cv2.findContours( hsv_msk, 
+    cv2.RETR_LIST,
+    cv2.CHAIN_APPROX_SIMPLE)
+    # перебираем все найденные контуры в цикле
+    for icontour in contours:
+    # выбираем контуры с длиной больше 40 точек
+        if len(icontour)>40:
+            circles += 1
+            # записываем в переменную ellipse
+            # отвечающий условию контур в форме эллипса
+            ellipse = cv2.fitEllipse(icontour)
+            # отображаем найденный эллипс
+            cv2.ellipse(img, ellipse, (255,0,255), 2)
+    # выводим итоговое изображение в окно contours
+    cv2.imshow('contours', img) 
+    # выводим результат фильтрации изображения в окно HSV
+    # cv2.imshow('hsv', hsv_msk) 
+    # ждем нажатия любой клавиши и закрываем все окна
+    cv2.waitKey(25)
 
-print(obj)
+    # cv2.imshow("img", drawing)
+    # cv2.waitKey(25)
+            
+    return circles
+    # else:
+        # circles_k_max = 1
+        # for k,v in obj.items():
+        #     if v > obj[circles_k_max]:
+        #         circles_k_max = k
+
+        # circles_k_min = 1
+        # for k,v in obj.items():
+        #     if v < obj[circles_k_min]:
+        #         circles_k_min = k
+        # return {'max': circles_k_max, 'min': circles_k_min}
+        # return obj
+
+# find_circles('ideal_1.jpg')
