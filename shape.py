@@ -1,35 +1,38 @@
+# Пример распознавания объектов по форме.
+# Сначала выделяем контуры зелёных объектов, а затем определяем
+# наиболее похожую фигуру и делаем соответствующую подпись.
+
 import cv2
 import numpy as np
-import mss
 import math
 
-from shape import find_contours
+def find_contours(img, color):
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_mask = cv2.inRange(img_hsv, color[0], color[1])
+    contours, _ = cv2.findContours(img_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+    return contours
 
-with mss.mss() as sct:
+if __name__ == '__main__':
+    
 
-    # monitor = {"top": 115, "left": 1162, "width": 558, "height": 410} # Для ноутбука без доп экрана
-    monitor = {"top": 115, "left": -749, "width": 541, "height": 406} # Для ноутбука с доп экраном
-    circles = 0
-    frames = 0
-    n = 1
-    while "Screen capturing":
-        frames += 1
-        img = np.array(sct.grab(monitor))
-        drawing = img.copy()
-        # Черный
-        # color = (
-        #     ( 0, 0,  0),
-        #     ( 100, 255, 50)
-        # )
-        
-        # Белый
+    # связываем видеопоток камеры с переменной capImg
+    capImg = cv2.VideoCapture(0)
+    # запускаем бесконечный цикл, чтобы следить
+    # в реальном времени
+    while(True):
+    # получаем кадр из видеопотока,
+    # кадры по очереди считываются в переменную frame
+        ret, frame = capImg.read()
+
+        drawing = frame.copy()
+
         color = (
-            (10, 0, 20),
-            (160, 30, 80)
+            ( 0, 0,  0),
+            ( 180, 255, 50),
         )
 
-        contours = find_contours(img, color)
+        contours = find_contours(frame, color)
 
         if contours:
             for cnt in contours:
@@ -54,10 +57,19 @@ with mss.mss() as sct:
                 rect_w, rect_h = rectangle[1][0], rectangle[1][1]
                 aspect_ratio = max(rect_w, rect_h) / min(rect_w, rect_h)
 
+                # Описанный треугольник
+                try:
+                    triangle = cv2.minEnclosingTriangle(cnt)[1]
+                    triangle = np.int0(triangle)
+                    triangle_area = cv2.contourArea(triangle)
+                except:
+                    triangle_area = 0
+
                 # Заполним словарь, который будет содержать площади каждой из описанных фигур
                 shapes_areas = {
                     'circle': circle_area,
                     'rectangle' if aspect_ratio > 1.25 else 'square': rectangle_area,
+                    'triangle': triangle_area,
                 }
 
                 # Теперь заполним аналогичный словарь, который будет содержать
@@ -75,10 +87,12 @@ with mss.mss() as sct:
 
                 if shape_name == 'circle':
                     cv2.circle(drawing, (int(circle_x), int(circle_y)), int(circle_radius), line_color, 2, cv2.LINE_AA)
-                    circles += 1
 
                 if shape_name == 'rectangle' or shape_name == 'square':
                     cv2.drawContours(drawing, [box], 0, line_color, 2, cv2.LINE_AA)
+
+                if shape_name == 'triangle':
+                    cv2.drawContours(drawing, [triangle], 0, line_color, 2, cv2.LINE_AA)
 
                 # вычислим центр, нарисуем в центре окружность и ниже подпишем
                 # текст с именем фигуры, которая наиболее похожа на исследуемый контур.
@@ -98,77 +112,19 @@ with mss.mss() as sct:
 
         cv2.imshow('drawing', drawing)
 
-        # print(frames, n)
+        
     # показываем кадр в окне ’Video’
-        cv2.imshow('Video', img)
-        if frames == 300 * n:
-            print(circles//frames)
-            circles = 0
-            frames = 0
+        cv2.imshow('Video', frame)
     # организуем выход из цикла по нажатию клавиши,
     # ждем 30 миллисекунд нажатие, записываем код
     # нажатой клавиши
-
+        key_press = cv2.waitKey(30)
     # если код нажатой клавиши совпадает с кодом
     # «q»(quit - выход),
-        if cv2.waitKey(25) & 0xFF == ord("q"):
-            cv2.destroyAllWindows()
+        if key_press == ord('q'):
+    # то прервать цикл while
             break
     # освобождаем память от переменной capImg
-
-
-        # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-        # # mask1 = cv2.inRange(hsv, (50, 70, 0), (135, 255, 160)) # Для черного цвета
-        # mask1 = cv2.inRange(hsv, (0,0,0), (180,255,100)) # Для всех (почти), кроме белых пикселей
-        # target = cv2.bitwise_and(img, img, mask=mask1)
-
-        # cv2.imshow('MASK1', mask1)
-        # cv2.imshow('USUAL', img)
-        # # cv2.imshow('FINAL', target)
-        # cv2.imshow('HSV', hsv)
-
-        # contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        # # print(len(contours))
-        # box1 = []
-        # # перебираем все найденные контуры в цикле
-        # for i in range(len(contours)):
-        #     # ищем прямоугольник, результат записываем
-        #     # в rect
-        #     rect = cv2.minAreaRect(contours[i]) 
-        #     # вычисление площади прямоугольного контура
-        #     area = int(rect[1][0]*rect[1][1]) 
-        #     # ФИЛЬТРУЕМ МЕЛКИЕ КОНТУРЫ
-        #     # отсекаем ложные контуры, если они вдруг
-        #     # появятся
-        #     if area > 200:
-        #         box1.append(contours[i])
-        #         # рисуем прямоугольник
-        #         cv2.drawContours(img, contours, i, (0,0,255), 20)
-
-        # # print('Тень: ', hsv[360, 0], 'Круг: ', hsv[70, 480])
-        # print(len(box1))
-
-# video = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-
-# while True:
-    # ret, img = video.read()
-
-    # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    # mask1 = cv2.inRange(hsv, (50, 70, 0), (135, 255, 160))
-
-    # target = cv2.bitwise_and(img, img, mask=mask1)
-
-    # cv2.imshow('MASK', mask1)
-    # cv2.imshow('USUAL', img)
-    # cv2.imshow('FINAL', target)
-    # cv2.imshow('HSV', hsv)
-    # print('Тень: ', hsv[360, 0], 'Круг: ', hsv[70, 480])
-#     key_press = cv2.waitKey(30)
-#     if key_press == ord('q'):
-#         cv2.imwrite('hsv.jpg', hsv)
-#         break
-
-# video.release()
-# cv2.destroyAllWindows()
+    capImg.release()
+    # закрываем все окна opencv
+    cv2.destroyAllWindows()
