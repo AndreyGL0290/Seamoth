@@ -2,11 +2,10 @@ import cv2
 from cv2 import circle
 import numpy as np
 import math
+from correction import update, correction
 
-video = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-
-def search(shape, color):
-    contours = find_contours(frame, color)
+def search(shape, color, frame):
+    contours = find_contours(frame, color, shape)
     for cnt in contours:
         area = cv2.contourArea(cnt)
 
@@ -50,10 +49,10 @@ def search(shape, color):
         # Нарисуем соответствующую описанную фигуру вокруг контура
 
         if shape_name == 'circle' and shape == 'circle':
-            cv2.circle(drawing, (int(circle_x), int(circle_y)), int(circle_radius), line_color, 2, cv2.LINE_AA)
+            cv2.circle(frame, (int(circle_x), int(circle_y)), int(circle_radius), line_color, 2, cv2.LINE_AA)
 
         if (shape_name == 'rect' or shape_name == 'square') and (shape == 'rect' or shape == 'square'):
-            cv2.drawContours(drawing, [box], 0, line_color, 2, cv2.LINE_AA)
+            cv2.drawContours(frame, [box], 0, line_color, 2, cv2.LINE_AA)
 
         # вычислим центр, нарисуем в центре окружность и ниже подпишем
         # текст с именем фигуры, которая наиболее похожа на исследуемый контур.
@@ -63,72 +62,81 @@ def search(shape, color):
             try:
                 x = int(moments['m10'] / moments['m00'])
                 y = int(moments['m01'] / moments['m00'])
-                cv2.circle(drawing, (x,y), 4, line_color, -1, cv2.LINE_AA)
+                cv2.circle(frame, (x,y), 4, line_color, -1, cv2.LINE_AA)
 
                 font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(drawing, shape_name, (x-40, y+31), font, 1, (  0,  0,  0), 4, cv2.LINE_AA)
-                cv2.putText(drawing, shape_name, (x-41, y+30), font, 1, (255,255,255), 2, cv2.LINE_AA)
+                cv2.putText(frame, shape_name, (x-40, y+31), font, 1, (  0,  0,  0), 4, cv2.LINE_AA)
+                cv2.putText(frame, shape_name, (x-41, y+30), font, 1, (255,255,255), 2, cv2.LINE_AA)
             except ZeroDivisionError:
                 pass
 
-def find_contours(img, color):
+def find_contours(img, color, shape='image'):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    print('Круг: ', img_hsv[200, 480])
+    # print('Круг: ', img_hsv[200, 480])
     img_mask = cv2.inRange(img_hsv, color[0], color[1])
-    cv2.imshow('mask', img_mask)
-    cv2.imshow('hsv', img_hsv)
+    cv2.imshow(f'{shape} mask', img_mask)
+    cv2.imshow(f'{shape} hsv', img_hsv)
     contours, _ = cv2.findContours(img_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     return contours
 
-while True:
-    ret, frame = video.read()
+if __name__ == '__main__':
+    video = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    window_name = 'image'
+    correction(window_name)
+    while True:
+        _, frame = video.read()
+        cv2.imshow(window_name, frame)
+        color = update(window_name, frame)
+        # ret, frame = video.read()
 
 
-    drawing = frame.copy()
-    # Кванториум белый
-    # color = (
-    #     (10, 0, 20),
-    #     (160, 50, 255)
-    # )
+        drawing1 = frame.copy()
+        # drawing2 = frame.copy()
+        # # Кванториум белый
+        # # color = (
+        # #     (10, 0, 20),
+        # #     (160, 50, 255)
+        # # )
 
-    # Кванториум черный
-    color_black = (
-        ( 0, 0,  0),
-        ( 255, 255, 70)
-    )
+        # # Кванториум черный
+        # color_black = (
+        #     ( 0, 0,  0),
+        #     ( 255, 255, 70)
+        # )
 
-    color_orange = (
-        ( 0, 140,  100),
-        ( 12, 255, 255)
-    )
+        # color_orange = (
+        #     ( 0, 140,  100),
+        #     ( 12, 255, 255)
+        # )
 
-    # color = (
-    #     (10, 40, 20),
-    #     (160, 70, 95)
-    # )
+        # # color = (
+        # #     (10, 40, 20),
+        # #     (160, 70, 95)
+        # # )
 
-    search('circle', color_black)
-    search('rect', color_orange)
-    cv2.imshow('drawing', drawing)
+        search('circle', color, drawing1)
+        # search('rect', color_orange, drawing2)
+        cv2.imshow('drawing1', drawing1)
+        # cv2.imshow('drawing2', drawing2)
 
-    # cv2.imshow('video', frame)
+        # # cv2.imshow('video', frame)
 
 
-    # hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        # # hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # mask1 = cv2.inRange(hsv, (50, 70, 0), (135, 255, 160))
+        # # mask1 = cv2.inRange(hsv, (50, 70, 0), (135, 255, 160))
 
-    # target = cv2.bitwise_and(frame, frame, mask=mask1)
+        # # target = cv2.bitwise_and(frame, frame, mask=mask1)
 
-    # cv2.imshow('MASK', mask1)
-    # cv2.imshow('USUAL', frame)
-    # cv2.imshow('FINAL', target)
-    # cv2.imshow('HSV', hsv)
-    key_press = cv2.waitKey(30)
-    if key_press == ord('q'):
-        # cv2.imwrite('hsv.jpg', hsv)
-        break
+        # # cv2.imshow('MASK', mask1)
+        # # cv2.imshow('USUAL', frame)
+        # # cv2.imshow('FINAL', target)
+        # # cv2.imshow('HSV', hsv)
+        key_press = cv2.waitKey(30)
+        if key_press == ord('q'):
+            # cv2.imwrite('hsv.jpg', hsv)
+            break
 
-video.release()
-cv2.destroyAllWindows()
+    video.release()
+    cv2.destroyAllWindows()
