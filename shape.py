@@ -10,7 +10,7 @@ def find_contours(img, color):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img_mask = cv2.inRange(img_hsv, color[0], color[1])
     contours, _ = cv2.findContours(img_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+    cv2.imshow('mask', img_mask)
     return contours
 
 if __name__ == '__main__':
@@ -31,6 +31,11 @@ if __name__ == '__main__':
             ( 0, 0,  0),
             ( 180, 255, 50),
         )
+
+        # color = (
+        #     ( 0, 140,  100),
+        #     ( 20, 255, 255)
+        # )
 
         contours = find_contours(frame, color)
 
