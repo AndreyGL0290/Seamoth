@@ -43,7 +43,7 @@ if __name__ == '__main__':
     correction(window_name)
     while True:
         # _, frame = video.read()
-        frame = cv2.imread("orange1.png")
+        frame = cv2.imread("red2.png")
         color = update(window_name, frame)
         
         key_press = cv2.waitKey(30)

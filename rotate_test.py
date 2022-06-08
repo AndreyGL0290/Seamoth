@@ -234,24 +234,13 @@ def img_process(num, img, cnt):
     return img
 
 def rotate(depth, yaw):
-    now = time.time()
-    while time.time() - now < 1:
-        keep_yaw(to_180(yaw+120))
-        keep_depth(depth - 0.1)
-        time.sleep(0.01)
+    for i in range(1, 4):
+        now = time.time()
+        while time.time() - now < 3:
+            keep_yaw(to_180(yaw + 120*i))
+            keep_depth(depth+0.1)
+            time.sleep(0.01)
     
-    now = time.time()
-    while time.time() - now < 1:
-        keep_yaw(to_180(yaw+240))
-        keep_depth(depth - 0.1)
-        time.sleep(0.01)
-    
-    now = time.time()
-    while time.time() - now < 1:
-        keep_yaw(to_180(yaw+360))
-        keep_depth(depth - 0.1)
-        time.sleep(0.01)
-
 def search(shape, color, img):
     circles = 0
     rect = 0
@@ -296,7 +285,7 @@ def search(shape, color, img):
         # Получаем имя фигуры с наименьшей разницой площади.
         shape_name = min(diffs, key=diffs.get)
         
-        line_color = (0,0,255)
+        # line_color = (0,0,255)
         
         # Нарисуем соответствующую описанную фигуру вокруг контура
 

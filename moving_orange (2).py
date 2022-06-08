@@ -73,34 +73,9 @@ def keep_depth(depth):
     prev_time = current_time
     prev_high_diff = high_diff
 
-def keep_yaw(yaw_to_set, speed = 0):
-    try: 
-        error = auv.get_yaw() - yaw_to_set 
-        error = to_180(error)
-        output = keep_yaw.regulator.process(error)
-        output = clamp(output, 25, -25)
-#        auv.set_motor_power(0, clamp((speed - output), 100, -100))#симулятор
-#        auv.set_motor_power(1, clamp((speed + output), 100, -100))#симулятор
-        
-        if speed != 0:
-            auv.set_motor_power(1, clamp(output + speed, 100, -100)) #Робот
-            auv.set_motor_power(2, clamp(-output + speed, 100, -100)) #Робот
-        else:
-            auv.set_motor_power(1, output) #Робот
-            auv.set_motor_power(2, -output) #Робот
-        
-        
-    except AttributeError:
-        keep_yaw.regulator = PD()
-        keep_yaw.regulator.set_p_gain(1) # 0.8
-        keep_yaw.regulator.set_d_gain(1) # 0.5
-
 def find_contours(img, color):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-#    print('Круг: ', img_hsv[200, 480])
     img_mask = cv2.inRange(img_hsv, color[0], color[1])
-#    cv2.imshow('mask', img_mask)
-#    cv2.imshow('hsv', img_hsv)
     contours, _ = cv2.findContours(img_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return contours
 
@@ -264,7 +239,7 @@ def turn_by_line(img):
     #         auv.set_motor_power(1, power)
     #         auv.set_motor_power(2, -power)
 
-def search(shape, color, img):
+def search(color, img):
     circles = 0
     rect = 0
     # drawing = img.copy()
@@ -308,20 +283,20 @@ def search(shape, color, img):
         # Получаем имя фигуры с наименьшей разницой площади.
         shape_name = min(diffs, key=diffs.get)
         
-        line_color = (0,0,255)
+        # line_color = (0,0,255)
         
         # Нарисуем соответствующую описанную фигуру вокруг контура
 
-        if shape_name == 'circle' and shape == 'circle':
+        if shape_name == 'circle':
             # cv2.circle(img, (int(circle_x), int(circle_y)), int(circle_radius), line_color, 2, cv2.LINE_AA)
             circles += 1
 
-        if (shape_name == 'rect' or shape_name == 'square') and (shape == 'rect' or shape == 'square'):
+        if (shape_name == 'rect' or shape_name == 'square'):
             # cv2.drawContours(img, [box], 0, line_color, 2, cv2.LINE_AA)
             rect += 1
         # cv2.imshow('frame', img)
         # cv2.waitKey(30)
-    return circles + rect
+    return circles, rect
 
 def int_r(num):
     num = int(num + (0.5 if num > 0 else -0.5))
@@ -337,42 +312,30 @@ def LED(times, color):
     auv.set_off_delay(0)
     auv.set_rgb_color(0, 255, 0)
 
-if __name__ == "__main__":
-#    video2 = cv2.VideoCapture(1)
-#    yaw = auv.get_yaw()
-#    
-#    color_orange = (
-#        (0, 0, 0),
-#        (82, 255, 255)
-#    )
-#    
-#    _, frame2 = video2.read()
-#    up = (7 * len(frame2)) // 16
-#    down = (9 * len(frame2)) // 16
-#    while True:
-#        _, frame2 = video2.read()
-#        mur_view.show(frame2, 1)
-#        cnt = find_contours(frame2, color_orange)
-#        keep_depth(depth + 0.1)
-#        try:
-#            center_point = get_center(frame2, cnt)
-#            power = stabilization(center_point, up, down)
-#            keep_yaw(to_180(yaw - 90), power)
-#        except ValueError:
-#            print('Не вижу заданного цвета')
-#            keep_yaw(to_180(yaw - 90))
-#        mur_view.show(frame2, 1) # Изображение уже обработано функцией get_center
+def keep_yaw(yaw_to_set, speed = 0):
+    try:
+        yaw_to_set += 10
+        error = auv.get_yaw() - yaw_to_set 
+        error = to_180(error)
+        output = keep_yaw.regulator.process(error)
+        output = clamp(output, 25, -25)
+#        auv.set_motor_power(0, clamp((speed - output), 100, -100))#симулятор
+#        auv.set_motor_power(1, clamp((speed + output), 100, -100))#симулятор
         
-        # -44 - straight, 46 - left
-#        keep_yaw(to_180(yaw - 90))
-#        time.sleep(0.1)
+        if speed != 0:
+            auv.set_motor_power(1, clamp(output + speed, 100, -100)) #Робот
+            auv.set_motor_power(2, clamp(-output + speed, 100, -100)) #Робот
+        else:
+            auv.set_motor_power(1, output) #Робот
+            auv.set_motor_power(2, -output) #Робот
+        
+        
+    except AttributeError:
+        keep_yaw.regulator = PD()
+        keep_yaw.regulator.set_p_gain(1) # 0.8
+        keep_yaw.regulator.set_d_gain(1) # 0.5
 
-
-
-
-
-
-
+if __name__ == "__main__":
     video1 = cv2.VideoCapture(0)
     video2 = cv2.VideoCapture(1)
     
@@ -389,8 +352,9 @@ if __name__ == "__main__":
         (180, 255, 90)
     )
 
-    depth = 0
+    depth = 0.5
 
+    # Выравниваемся
     now = time.time()
     while time.time() - now < 3:
         _, frame2 = video2.read()
@@ -403,13 +367,14 @@ if __name__ == "__main__":
     yaw = auv.get_yaw()
 
     # Погружаемся и заодно смотрим цвета
-#    now = time.time()
-#    while time.time() - now < 5:
-#        _, frame2 = video2.read()
-#        mur_view.show(frame2, 1)
-#        keep_depth(depth + 0.1)
-#        keep_yaw(yaw)
-#        time.sleep(0.01)
+    now = time.time()
+    while time.time() - now < 5:
+        _, frame2 = video2.read()
+        mur_view.show(frame2, 1)
+        keep_depth(depth + 0.1)
+        keep_yaw(yaw)
+        time.sleep(0.01)
+
     circles = {}
     move_time = 0
     counter = 1
@@ -464,52 +429,41 @@ if __name__ == "__main__":
             _, frame2 = video2.read()
 #            mur_view.show(frame1, 0)
             mur_view.show(frame2, 1)
-            keep_yaw(yaw-90)
+            keep_yaw(yaw+90)
             keep_depth(depth+0.1)
             time.sleep(0.1)
 
         # Читаем круги и мигаем световой лентой
-        circle = 0
-        rect = 0
-        frame = 0
         while True:
-#            print('reading circles')
-
-            now = time.time()
-            while time.time()-now < 5:
-                _, frame1 = video1.read()
-                # _, frame2 = video2.read()
-
-                mur_view.show(frame1, 0) # ДЛЯ РОБОТА
-                # mur_view.show(frame2, 1) # ДЛЯ РОБОТА
-                
-                keep_yaw(to_180(yaw-90)) # Поворот налево
-                keep_depth(depth + 0.1)
-                circle += search("circle", color_black, frame1)
-                rect += search("rect", color_black, frame1)
-                frame += 1
-                time.sleep(0.01)
-            circles[counter] = int_r(circle/frame)
+            _, frame1 = video1.read()
+            circle, rect = search(color_black, frame1)
+            print('Нашел ', circle + rect, ' черных кругов')
+            circles[counter] = circle + rect
+        
+#            auv.set_motor_power(0, 0)
+            auv.set_motor_power(1, 0)
+            auv.set_motor_power(2, 0)
+#            auv.set_motor_power(3, 0)
+ 
             LED(circles[counter], (255, 0, 0))
-            print('Нашел ', circles[counter], ' черных кругов')
-            print('Нашел ', int_r(rect/frame), ' черных квадратов')
             break
-
+        
+        # Стабилизация
         up = (7 * len(frame2)) // 16
         down = (9 * len(frame2)) // 16
-        
         now = time.time()
         while time.time() - now < 6:
             _, frame2 = video2.read()
             cnt = find_contours(frame2, color_orange)
             keep_depth(depth + 0.1)
+
             try:
                 center_point = get_center(frame2, cnt)
                 power = stabilization(center_point, up, down)
-                keep_yaw(to_180(yaw - 90), power)
+                keep_yaw(to_180(yaw + 90), power)
             except ValueError:
                 print('Не вижу заданного цвета')
-                keep_yaw(to_180(yaw - 90))
+                keep_yaw(to_180(yaw + 90))
             mur_view.show(frame2, 1) # Изображение уже обработано функцией get_center
 
         now = time.time()
@@ -520,7 +474,7 @@ if __name__ == "__main__":
             keep_depth(depth+0.1)
             time.sleep(0.1)
         
-#        Стабилизация курса по линии
+        # Стабилизация курса по линии
         now = time.time()
         while time.time() - now < 3:
             _, frame2 = video2.read()
@@ -531,6 +485,13 @@ if __name__ == "__main__":
             mur_view.show(drawing, 1)
             time.sleep(0.01)
         yaw = auv.get_yaw()
+
+    # Отключаем все движители
+    auv.set_motor_power(0, 0)
+    auv.set_motor_power(1, 0)
+    auv.set_motor_power(2, 0)
+    auv.set_motor_power(3, 0) 
+            
             
             
             
