@@ -403,17 +403,8 @@ if __name__ == '__main__':
     angle_rot = 90
     
     # Выравниваемся
-#    now = time.time()
-#    while time.time() - now < 5:
-#        _, frame2 = video2.read()
-#        drawing = frame2.copy()
-#        turn_by_line(drawing)
-#        mur_view.show(drawing, 1)
-#        time.sleep(0.01)
-    
-    # Выравниваемся
     now = time.time()
-    while time.time() - now < 6:
+    while time.time() - now < 4:
         _, frame2 = video2.read()
         drawing = frame2.copy()
         
@@ -425,7 +416,7 @@ if __name__ == '__main__':
 
     # Поворачиваемся на круг
     now = time.time()
-    while time.time() - now < 4:
+    while time.time() - now < 3:
         keep_yaw(to_180(yaw+angle_rot+10))
         time.sleep(0.01)
 
@@ -449,7 +440,7 @@ if __name__ == '__main__':
     
     # Поворот обратно к линии
     now = time.time()
-    while time.time() - now < 4:
+    while time.time() - now < 3:
         keep_yaw(to_180(yaw))
         keep_depth(depth + 0.1)
         time.sleep(0.01)
@@ -457,10 +448,6 @@ if __name__ == '__main__':
     prev_box = []
     counter = 1
     circles = {}
-
-    '''
-    Если он будет криво стоять после поворота на оранжевую линию, то добавить регулировку по самой линии перед поиском большей новой
-    '''
     
     # Добавил небольшой простой, ОН НУЖЕН
     now = time.time()
@@ -493,7 +480,7 @@ if __name__ == '__main__':
                     down = (9 * len(frame2)) // 16
 
                     now = time.time()
-                    while time.time() - now < 5:
+                    while time.time() - now < 3:
                         _, frame2 = video2.read()
                         keep_depth(depth + 0.1)
                         cnt = find_contours(frame2, color_orange)
@@ -510,7 +497,7 @@ if __name__ == '__main__':
 
         # Поворачиваемся на круги
         now = time.time()
-        while time.time() - now < 2:
+        while time.time() - now < 3:
             _, frame1 = video1.read()
             mur_view.show(frame1, 0)
             keep_yaw(to_180(yaw+angle_rot))
@@ -521,7 +508,7 @@ if __name__ == '__main__':
         now = time.time()
         up = (7 * len(frame2)) // 16
         down = (9 * len(frame2)) // 16
-        while time.time() - now < 5:
+        while time.time() - now < 3:
             _, frame1 = video1.read()
             _, frame2 = video2.read()
             keep_depth(depth + 0.1)
@@ -555,22 +542,29 @@ if __name__ == '__main__':
             
             now = time.time()
             while time.time() - now < k * n:
-                keep_yaw(to_180(yaw+angle_rot))
-                keep_depth(depth+0.1)
-                time.sleep(0.01)
+                up = (7 * len(frame2)) // 16
+                down = (9 * len(frame2)) // 16
+                stab(up, down, yaw+angle_rot)
             
             DELED()
             break
 
         # Поворот обратно в сторону линий
         now = time.time()
-        while time.time() - now < 4:
+        while time.time() - now < 3:
             _, frame2 = video2.read()
             mur_view.show(frame2, 1)
             keep_yaw(to_180(yaw))
             keep_depth(depth+0.1)
             time.sleep(0.1)
-            
+        
+        # Стабилизируемся
+        now = time.time()
+        up = (7 * len(frame2)) // 16
+        down = (9 * len(frame2)) // 16
+        while time.time() - now < 3:
+            stab(up, down, yaw)
+
         # Выравниваемся
         now = time.time()
         while time.time() - now < 2:

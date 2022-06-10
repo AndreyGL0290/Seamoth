@@ -397,15 +397,6 @@ if __name__ == '__main__':
     angle_rot = 90
     
     # Выравниваемся
-#    now = time.time()
-#    while time.time() - now < 5:
-#        _, frame2 = video2.read()
-#        drawing = frame2.copy()
-#        turn_by_line(drawing)
-#        mur_view.show(drawing, 1)
-#        time.sleep(0.01)
-    
-    # Выравниваемся
     now = time.time()
     while time.time() - now < 4:
         _, frame2 = video2.read()
@@ -456,7 +447,7 @@ if __name__ == '__main__':
     
     # Добавил небольшой простой, ОН НУЖЕН
     now = time.time()
-    while time.time() - now<1:
+    while time.time() - now < 1:
         _, frame2 = video2.read()
         mur_view.show(frame2, 1)
         keep_yaw(to_180(yaw))
