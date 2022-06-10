@@ -19,7 +19,7 @@ def touch():
     print('touched')
 
 if __name__ == '__main__':
-    circles = {1:1, 2:6, 3:5, 4:2, 5:4}
+    circles = {1:1, 2:6, 3:5, 4:2}
 
     position = list(circles.keys())[-1]
 

@@ -301,12 +301,14 @@ def touch(depth, yaw):
     while time.time() - now < 2:
         keep_depth(depth+0.1)
         keep_yaw(to_180(yaw+angle_rot), -30)
+        time.sleep(0.01)
     
     # Чуть чуть отплываем, чтоб линия попала в поле зрения
     now = time.time()
     while time.time() - now < 2:
         keep_depth(depth+0.1)
         keep_yaw(to_180(yaw+angle_rot), 30)
+        time.sleep(0.01)
     
     # Выравниваемся
     now = time.time()
@@ -542,14 +544,14 @@ if __name__ == '__main__':
             print('Нашел ', rect, ' черных квадратов')
             circles[counter] = circle + rect
 
-            LED()
-
             k = circles[counter]
             n = 1.5
 
             if circles[counter] == 1:
                 k = 1
                 n = 1
+
+            LED()
             
             now = time.time()
             while time.time() - now < k * n:
@@ -571,7 +573,7 @@ if __name__ == '__main__':
             
         # Выравниваемся
         now = time.time()
-        while time.time() - now < 4:
+        while time.time() - now < 2:
             _, frame2 = video2.read()
             drawing = frame2.copy()
             keep_depth(depth + 0.1)

@@ -194,7 +194,7 @@ def turn_by_line(img):
             font = cv2.FONT_HERSHEY_DUPLEX
             cv2.putText(img, 'angle: %d' % angle, (5, 30), font, 1, (255,255,255), 1, cv2.LINE_AA)
     if IS_AUV:
-        power = max(min(angle*2, 25), -25)
+        power = max(min(angle*2, 25), -25) # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         auv.set_motor_power(1, power)
         auv.set_motor_power(2, -power)
 
@@ -293,12 +293,14 @@ def touch(depth, yaw):
     while time.time() - now < 2:
         keep_depth(depth+0.1)
         keep_yaw(to_180(yaw+angle_rot), -30)
+        time.sleep(0.01)
     
     # Чуть чуть отплываем, чтоб линия попала в поле зрения
     now = time.time()
     while time.time() - now < 2:
         keep_depth(depth+0.1)
         keep_yaw(to_180(yaw+angle_rot), 30)
+        time.sleep(0.01)
     
     # Выравниваемся
     now = time.time()
@@ -418,16 +420,14 @@ if __name__ == '__main__':
     # Поворачиваемся на круг
     now = time.time()
     while time.time() - now < 4:
-        keep_yaw(to_180(yaw+angle_rot+10))
+        keep_yaw(to_180(yaw+angle_rot))
         time.sleep(0.01)
 
     # Погружение
     while True:
         _, frame1 = video1.read()  # ПЕРЕДНЯЯ
-        # _, frame2 = video2.read()  # НИЖНЯЯ
         show1 = frame1[height//3-30:2*height//3+30]
         mur_view.show(frame1, 0) # ДЛЯ РОБОТА
-#        mur_view.show(frame2, 1) # ДЛЯ РОБОТА
 
         keep_yaw(to_180(yaw+angle_rot))
         keep_depth(t)
@@ -514,20 +514,22 @@ if __name__ == '__main__':
             print('Нашел ', rect, ' черных квадратов')
             circles[counter] = circle + rect
 
-            LED()
-
             k = circles[counter]
             n = 1.5
 
             if circles[counter] == 1:
                 k = 1
                 n = 1
+
+            LED()
             
             now = time.time()
             while time.time() - now < k * n:
-                keep_yaw(to_180(yaw+angle_rot))
-                keep_depth(depth+0.1)
-                time.sleep(0.01)
+                now = time.time()
+                up = (7 * len(frame2)) // 16
+                down = (9 * len(frame2)) // 16
+                while time.time() - now < 5:
+                    stab(up, down, yaw+angle_rot)
             
             DELED()
             break
@@ -543,15 +545,17 @@ if __name__ == '__main__':
             
         # Выравниваемся
         now = time.time()
-        while time.time() - now < 4:
+        while time.time() - now < 2:
             _, frame2 = video2.read()
             drawing = frame2.copy()
             keep_depth(depth + 0.1)
             turn_by_line(drawing)
             mur_view.show(drawing, 1)
-            time.sleep(0.01) 
+            time.sleep(0.01)
+        
+        print(yaw)
         yaw = auv.get_yaw()
-
+        print(yaw)
         counter+=1
 
     print("coming back")
