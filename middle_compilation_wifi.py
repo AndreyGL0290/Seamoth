@@ -407,7 +407,7 @@ if __name__ == '__main__':
     
     # Выравниваемся
     now = time.time()
-    while time.time() - now < 6:
+    while time.time() - now < 4:
         _, frame2 = video2.read()
         drawing = frame2.copy()
         
@@ -419,7 +419,7 @@ if __name__ == '__main__':
 
     # Поворачиваемся на круг
     now = time.time()
-    while time.time() - now < 4:
+    while time.time() - now < 3:
         keep_yaw(to_180(yaw+angle_rot))
         time.sleep(0.01)
 
@@ -432,7 +432,7 @@ if __name__ == '__main__':
         keep_yaw(to_180(yaw+angle_rot))
         keep_depth(t)
         time.sleep(0.01)
-        print(search(color_red2, show1)[1])
+        # print(search(color_red2, show1)[1])
         if search(color_red1, show1)[1] >= 1:
             print("found red circle")
             depth = auv.get_depth()
@@ -441,7 +441,7 @@ if __name__ == '__main__':
     
     # Поворот обратно к линии
     now = time.time()
-    while time.time() - now < 4:
+    while time.time() - now < 3:
         keep_yaw(to_180(yaw))
         keep_depth(depth + 0.1)
         time.sleep(0.01)
@@ -485,25 +485,25 @@ if __name__ == '__main__':
                     down = (9 * len(frame2)) // 16
 
                     now = time.time()
-                    while time.time() - now < 5:
+                    while time.time() - now < 3:
                         stab(up, down, yaw)
                     break
             prev_box = box
 
         # Поворачиваемся на круги
         now = time.time()
-        while time.time() - now < 2:
+        while time.time() - now < 3:
             _, frame1 = video1.read()
             mur_view.show(frame1, 0)
             keep_yaw(to_180(yaw+angle_rot))
             keep_depth(depth+0.1)
             time.sleep(0.1)
-        
+
         # Стабилизируемся
         now = time.time()
         up = (7 * len(frame2)) // 16
         down = (9 * len(frame2)) // 16
-        while time.time() - now < 5:
+        while time.time() - now < 3:
             stab(up, down, yaw+angle_rot)
 
         # Читаем круги и мигаем световой лентой
@@ -525,27 +525,32 @@ if __name__ == '__main__':
             
             now = time.time()
             while time.time() - now < k * n:
-                now = time.time()
                 up = (7 * len(frame2)) // 16
                 down = (9 * len(frame2)) // 16
-                while time.time() - now < 5:
-                    stab(up, down, yaw+angle_rot)
+                stab(up, down, yaw+angle_rot)
             
             DELED()
             break
 
         # Поворот обратно в сторону линий
         now = time.time()
-        while time.time() - now < 4:
+        while time.time() - now < 3:
             _, frame2 = video2.read()
             mur_view.show(frame2, 1)
             keep_yaw(to_180(yaw))
             keep_depth(depth+0.1)
             time.sleep(0.1)
-            
+
+        # Стабилизируемся
+        now = time.time()
+        up = (7 * len(frame2)) // 16
+        down = (9 * len(frame2)) // 16
+        while time.time() - now < 3:
+            stab(up, down, yaw)
+
         # Выравниваемся
         now = time.time()
-        while time.time() - now < 2:
+        while time.time() - now < 3:
             _, frame2 = video2.read()
             drawing = frame2.copy()
             keep_depth(depth + 0.1)
@@ -670,10 +675,9 @@ if __name__ == '__main__':
     # Всплываем
     now = time.time()
     while time.time() - now < 7:
-        auv.set_motor_power(0, -30)
-        auv.set_motor_power(1, 0)
-        auv.set_motor_power(2, 0)
-        auv.set_motor_power(3, -30)
+        keep_depth(0)
+        keep_yaw(yaw)
+        time.sleep(0.01)
 
     # End of the program
     auv.set_motor_power(0, 0)
