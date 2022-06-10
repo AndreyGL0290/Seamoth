@@ -312,8 +312,6 @@ def touch(depth, yaw):
     
     # Выравниваемся
     now = time.time()
-    up = (7 * len(frame2)) // 16
-    down = (9 * len(frame2)) // 16
     while time.time() - now < 5:
         stab(up, down, yaw+angle_rot)
 
@@ -372,6 +370,9 @@ if __name__ == '__main__':
 
     height = len(video1.read()[1]) # Высота изображения
     width = len(video1.read()[1][1]) # Широта изображеия
+
+    up = (7 * height) // 16
+    down = (9 * height) // 16
 
     color_black = (
         (0, 0, 0),
@@ -476,22 +477,9 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 3:
-                        _, frame2 = video2.read()
-                        keep_depth(depth + 0.1)
-                        cnt = find_contours(frame2, color_orange)
-                        try:
-                            center_point = get_center(frame2, cnt)
-                            power = stabilization(center_point, up, down)
-                            
-                            keep_yaw(to_180(yaw), power)
-                        except ValueError:
-                            keep_yaw(to_180(yaw))
-                        mur_view.show(frame2, 1)
+                        stab(up, down, yaw)
                     break
             prev_box = box
 
@@ -506,22 +494,8 @@ if __name__ == '__main__':
         
         # Стабилизируемся
         now = time.time()
-        up = (7 * len(frame2)) // 16
-        down = (9 * len(frame2)) // 16
         while time.time() - now < 3:
-            _, frame1 = video1.read()
-            _, frame2 = video2.read()
-            keep_depth(depth + 0.1)
-            cnt = find_contours(frame2, color_orange)
-            try:
-                center_point = get_center(frame2, cnt)
-                power = stabilization(center_point, up, down)
-                
-                keep_yaw(to_180(yaw+angle_rot), power)
-            except ValueError:
-                keep_yaw(to_180(yaw+angle_rot))
-            mur_view.show(frame2, 1)
-            mur_view.show(frame1, 0)
+            stab(up, down, yaw+angle_rot)
 
         # Читаем круги и мигаем световой лентой
         while True:
@@ -542,8 +516,6 @@ if __name__ == '__main__':
             
             now = time.time()
             while time.time() - now < k * n:
-                up = (7 * len(frame2)) // 16
-                down = (9 * len(frame2)) // 16
                 stab(up, down, yaw+angle_rot)
             
             DELED()
@@ -560,8 +532,6 @@ if __name__ == '__main__':
         
         # Стабилизируемся
         now = time.time()
-        up = (7 * len(frame2)) // 16
-        down = (9 * len(frame2)) // 16
         while time.time() - now < 3:
             stab(up, down, yaw)
 
@@ -610,9 +580,6 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 5:
                         stab(up, down, yaw)
@@ -646,9 +613,6 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 5:
                         stab(up, down, yaw)
@@ -679,9 +643,6 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 5:
                         stab(up, down, yaw)

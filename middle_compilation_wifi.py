@@ -367,6 +367,9 @@ if __name__ == '__main__':
     height = len(video1.read()[1]) # Высота изображения
     width = len(video1.read()[1][1]) # Широта изображеия
 
+    up = (7 * height) // 16
+    down = (9 * height) // 16
+
     color_black = (
         (0, 0, 0),
         (180, 255, 113)
@@ -441,10 +444,6 @@ if __name__ == '__main__':
     counter = 1
     circles = {}
 
-    '''
-    Если он будет криво стоять после поворота на оранжевую линию, то добавить регулировку по самой линии перед поиском большей новой
-    '''
-    
     # Добавил небольшой простой, ОН НУЖЕН
     now = time.time()
     while time.time() - now < 1:
@@ -472,9 +471,6 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 3:
                         stab(up, down, yaw)
@@ -492,8 +488,6 @@ if __name__ == '__main__':
 
         # Стабилизируемся
         now = time.time()
-        up = (7 * len(frame2)) // 16
-        down = (9 * len(frame2)) // 16
         while time.time() - now < 3:
             stab(up, down, yaw+angle_rot)
 
@@ -516,8 +510,6 @@ if __name__ == '__main__':
             
             now = time.time()
             while time.time() - now < k * n:
-                up = (7 * len(frame2)) // 16
-                down = (9 * len(frame2)) // 16
                 stab(up, down, yaw+angle_rot)
             
             DELED()
@@ -534,8 +526,6 @@ if __name__ == '__main__':
 
         # Стабилизируемся
         now = time.time()
-        up = (7 * len(frame2)) // 16
-        down = (9 * len(frame2)) // 16
         while time.time() - now < 3:
             stab(up, down, yaw)
 
@@ -584,9 +574,6 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 5:
                         stab(up, down, yaw)
@@ -620,9 +607,6 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 5:
                         stab(up, down, yaw)
@@ -653,9 +637,6 @@ if __name__ == '__main__':
 
             if prev_box != []:
                 if abs(box[0][1] - prev_box[0][1]) > 50:
-                    up = (7 * len(frame2)) // 16
-                    down = (9 * len(frame2)) // 16
-
                     now = time.time()
                     while time.time() - now < 5:
                         stab(up, down, yaw)
