@@ -162,11 +162,6 @@ def calc_angle(drawing, cnt):
         box = np.int0(box)
         cv2.drawContours(drawing, [box], 0, (0,0,255), 3)
 
-        # К сожалению, мы не можем использовать тот угол,
-        # который входит в вывод функции minAreaRect,
-        # т.к. нам необходимо ориентироваться именно по
-        # длинной стороне полоски. Находим длинную сторону.
-
         edge_first = np.int0((box[1][0] - box[0][0], box[1][1] - box[0][1]))
         edge_second = np.int0((box[2][0] - box[1][0], box[2][1] - box[1][1]))
 
@@ -220,7 +215,7 @@ def img_process(num, img, cnt):
     font = cv2.FONT_HERSHEY_PLAIN
     rectangle = cv2.minAreaRect(cnt)
     box = np.int0(cv2.boxPoints(rectangle))
-    cv2.drawContours(img,[box],0,(0,0,250),2)
+    cv2.drawContours(img,[box],0,(0,0,255),2)
 
     cv2.putText(img, 'Camera {}'.format(num), (5,25), font, 2, (255,255,255), 2, cv2.LINE_AA)
 
@@ -233,7 +228,6 @@ def get_center(img, contours):
 
     if (len(areas) > 0):
         cnt_max = contours[np.argmax(areas)]
-
         rectangle = cv2.minAreaRect(cnt_max)
         box = cv2.boxPoints(rectangle)
         box = np.int0(box)
@@ -248,29 +242,8 @@ def get_center(img, contours):
 def stabilization(pt, up, down):
     y = pt[1]
     middle = up + (abs(down - up)//2)
-    power = max(min((y-middle) * 0.25, 30), -30)
+    power = max(min((y-middle) * 0.25, 25), -25)
     return power
-
-def keep_yaw(yaw_to_set, speed = 0):
-    try:
-        yaw_to_set = to_180(yaw_to_set + 0)
-        error = auv.get_yaw() - yaw_to_set
-        error = to_180(error)
-        output = keep_yaw.regulator.process(error)
-        output = clamp(output, 30, -30)
-        
-        if speed != 0:
-            auv.set_motor_power(1, clamp(output + speed, 100, -100)) #Робот
-            auv.set_motor_power(2, clamp(-output + speed, 100, -100)) #Робот
-        else:
-            auv.set_motor_power(1, output) #Робот
-            auv.set_motor_power(2, -output) #Робот
-        
-        
-    except AttributeError:
-        keep_yaw.regulator = PD()
-        keep_yaw.regulator.set_p_gain(1) # 0.8
-        keep_yaw.regulator.set_d_gain(1) # 0.5
 
 def stab(up, down, yaw):
     _, frame1 = video1.read()
@@ -287,6 +260,25 @@ def stab(up, down, yaw):
     mur_view.show(frame2, 1)
     mur_view.show(frame1, 0)
     time.sleep(0.01)
+
+def keep_yaw(yaw_to_set, speed = 0):
+    try:
+        yaw_to_set = to_180(yaw_to_set + 0)
+        error = auv.get_yaw() - yaw_to_set
+        error = to_180(error)
+        output = keep_yaw.regulator.process(error)
+        output = clamp(output, 25, -25)
+
+        if speed != 0:
+            auv.set_motor_power(1, clamp(output + speed, 100, -100)) # Робот
+            auv.set_motor_power(2, clamp(-output + speed, 100, -100)) # Робот
+        else:
+            auv.set_motor_power(1, output) # Робот
+            auv.set_motor_power(2, -output) # Робот
+    except AttributeError:
+        keep_yaw.regulator = PD()
+        keep_yaw.regulator.set_p_gain(1) # 0.8
+        keep_yaw.regulator.set_d_gain(1) # 0.5
 
 def touch(depth, yaw):
     # Поворачиваемся
@@ -343,6 +335,8 @@ def keep_depth(depth):
     power_value = clamp(high_diff*k + diff_value, 40, -40)
     power_0 = power_value
     power_3 = power_value
+
+#    print(power_0, power_3)
     
     auv.set_motor_power(0, power_0)
     auv.set_motor_power(3, power_3)
@@ -492,17 +486,7 @@ if __name__ == '__main__':
 
                     now = time.time()
                     while time.time() - now < 5:
-                        _, frame2 = video2.read()
-                        keep_depth(depth + 0.1)
-                        cnt = find_contours(frame2, color_orange)
-                        try:
-                            center_point = get_center(frame2, cnt)
-                            power = stabilization(center_point, up, down)
-                            
-                            keep_yaw(to_180(yaw), power)
-                        except ValueError:
-                            keep_yaw(to_180(yaw))
-                        mur_view.show(frame2, 1)
+                        stab(up, down, yaw)
                     break
             prev_box = box
 
@@ -520,19 +504,7 @@ if __name__ == '__main__':
         up = (7 * len(frame2)) // 16
         down = (9 * len(frame2)) // 16
         while time.time() - now < 5:
-            _, frame1 = video1.read()
-            _, frame2 = video2.read()
-            keep_depth(depth + 0.1)
-            cnt = find_contours(frame2, color_orange)
-            try:
-                center_point = get_center(frame2, cnt)
-                power = stabilization(center_point, up, down)
-                
-                keep_yaw(to_180(yaw+angle_rot), power)
-            except ValueError:
-                keep_yaw(to_180(yaw+angle_rot))
-            mur_view.show(frame2, 1)
-            mur_view.show(frame1, 0)
+            stab(up, down, yaw+angle_rot)
 
         # Читаем круги и мигаем световой лентой
         while True:
@@ -581,8 +553,6 @@ if __name__ == '__main__':
         yaw = auv.get_yaw()
 
         counter+=1
-    
-    # print(move_time)
 
     print("coming back")
     
