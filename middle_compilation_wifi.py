@@ -189,12 +189,11 @@ def turn_by_line(img):
         ]
         if (len(areas) > 0) and (max(areas) > 500):
             cnt = contours[np.argmax(areas)]
-            print('dfgsdfafsd')
             angle = calc_angle(img, cnt)
             font = cv2.FONT_HERSHEY_DUPLEX
             cv2.putText(img, 'angle: %d' % angle, (5, 30), font, 1, (255,255,255), 1, cv2.LINE_AA)
     if IS_AUV:
-        power = max(min(angle*2, 25), -25) # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        power = max(min(angle*1.25, 25), -25) # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         auv.set_motor_power(1, power)
         auv.set_motor_power(2, -power)
 
@@ -248,7 +247,7 @@ def stabilization(pt, up, down):
 def stab(up, down, yaw):
     _, frame1 = video1.read()
     _, frame2 = video2.read()
-    keep_depth(depth + 0.1)
+    keep_depth(depth + m)
     cnt = find_contours(frame2, color_orange)
     try:
         center_point = get_center(frame2, cnt)
@@ -263,7 +262,7 @@ def stab(up, down, yaw):
 
 def keep_yaw(yaw_to_set, speed = 0):
     try:
-        yaw_to_set = to_180(yaw_to_set + 0)
+        yaw_to_set = to_180(yaw_to_set)
         error = auv.get_yaw() - yaw_to_set
         error = to_180(error)
         output = keep_yaw.regulator.process(error)
@@ -285,20 +284,20 @@ def touch(depth, yaw):
     now = time.time()
     while time.time() - now < 3:
         keep_yaw(to_180(yaw+angle_rot))
-        keep_depth(depth+0.1)
+        keep_depth(depth+m)
         time.sleep(0.01)
 
     # Подплываем и касаемся
     now = time.time()
-    while time.time() - now < 2:
-        keep_depth(depth+0.1)
+    while time.time() - now < 5:
+        keep_depth(depth+m)
         keep_yaw(to_180(yaw+angle_rot), -30)
         time.sleep(0.01)
     
     # Чуть чуть отплываем, чтоб линия попала в поле зрения
     now = time.time()
-    while time.time() - now < 2:
-        keep_depth(depth+0.1)
+    while time.time() - now < 3:
+        keep_depth(depth+m)
         keep_yaw(to_180(yaw+angle_rot), 30)
         time.sleep(0.01)
     
@@ -307,26 +306,26 @@ def touch(depth, yaw):
     up = (7 * len(frame2)) // 16
     down = (9 * len(frame2)) // 16
     while time.time() - now < 5:
-        stab(up, down, yaw+angle_rot)
+        stab(up, down, yaw+angle_rot, depth)
 
 def rotate(depth, yaw):
     now = time.time()
     while time.time() - now < 3:
         keep_yaw(to_180(yaw+angle_rot))
-        keep_depth(depth+0.1)
+        keep_depth(depth+m)
         time.sleep(0.01)
     
     for i in range(1, 4):
         now = time.time()
         while time.time() - now < 3:
             keep_yaw(to_180((yaw+angle_rot)+120*i))
-            keep_depth(depth+0.1)
+            keep_depth(depth+m)
             time.sleep(0.01)
 
 def keep_depth(depth):
     global prev_time, prev_high_diff
     current_time = int(round(time.time() * 1000))
-    k = 100
+    k = 300
     high_diff = auv.get_depth() - depth
 
     power_0 = 0
@@ -394,7 +393,8 @@ if __name__ == '__main__':
         (180, 180, 255)
     )
 
-    t = 0.1
+    t = 0
+    m = 0.2
     counter = 1
     circles = {}
     angle_rot = 90
@@ -410,7 +410,6 @@ if __name__ == '__main__':
         time.sleep(0.01)
     
     yaw = auv.get_yaw()
-
     # Поворачиваемся на круг
     now = time.time()
     while time.time() - now < 3:
@@ -437,7 +436,7 @@ if __name__ == '__main__':
     now = time.time()
     while time.time() - now < 3:
         keep_yaw(to_180(yaw))
-        keep_depth(depth + 0.1)
+        keep_depth(depth + m)
         time.sleep(0.01)
     
     prev_box = []
@@ -446,11 +445,11 @@ if __name__ == '__main__':
 
     # Добавил небольшой простой, ОН НУЖЕН
     now = time.time()
-    while time.time() - now < 1:
+    while time.time() - now < 2:
         _, frame2 = video2.read()
         mur_view.show(frame2, 1)
         keep_yaw(to_180(yaw))
-        keep_depth(depth+0.1)
+        keep_depth(depth+m)
     
     # Начинаем плыть по линии и выполнять задания
     while counter < 4:
@@ -464,7 +463,7 @@ if __name__ == '__main__':
             box, cnt = find_max_coords(frame2, contours)
             
             keep_yaw(to_180(yaw), -30)
-            keep_depth(depth + 0.1)
+            keep_depth(depth + m)
             time.sleep(0.01)
 
             mur_view.show(img_process(1, frame2, cnt), 1)
@@ -473,23 +472,21 @@ if __name__ == '__main__':
                 if abs(box[0][1] - prev_box[0][1]) > 50:
                     now = time.time()
                     while time.time() - now < 3:
-                        stab(up, down, yaw)
+                        stab(up, down, yaw, depth)
                     break
             prev_box = box
 
         # Поворачиваемся на круги
         now = time.time()
         while time.time() - now < 3:
-            _, frame1 = video1.read()
-            mur_view.show(frame1, 0)
             keep_yaw(to_180(yaw+angle_rot))
-            keep_depth(depth+0.1)
-            time.sleep(0.1)
+            keep_depth(depth+m)
+            time.sleep(0.01)
 
         # Стабилизируемся
         now = time.time()
         while time.time() - now < 3:
-            stab(up, down, yaw+angle_rot)
+            stab(up, down, yaw+angle_rot, depth)
 
         # Читаем круги и мигаем световой лентой
         while True:
@@ -510,7 +507,7 @@ if __name__ == '__main__':
             
             now = time.time()
             while time.time() - now < k * n:
-                stab(up, down, yaw+angle_rot)
+                stab(up, down, yaw+angle_rot, depth)
             
             DELED()
             break
@@ -518,23 +515,21 @@ if __name__ == '__main__':
         # Поворот обратно в сторону линий
         now = time.time()
         while time.time() - now < 3:
-            _, frame2 = video2.read()
-            mur_view.show(frame2, 1)
             keep_yaw(to_180(yaw))
-            keep_depth(depth+0.1)
-            time.sleep(0.1)
+            keep_depth(depth+m)
+            time.sleep(0.01)
 
         # Стабилизируемся
         now = time.time()
         while time.time() - now < 3:
-            stab(up, down, yaw)
+            stab(up, down, yaw, depth)
 
         # Выравниваемся
         now = time.time()
         while time.time() - now < 3:
             _, frame2 = video2.read()
             drawing = frame2.copy()
-            keep_depth(depth + 0.1)
+            keep_depth(depth + m)
             turn_by_line(drawing)
             mur_view.show(drawing, 1)
             time.sleep(0.01)
@@ -567,7 +562,7 @@ if __name__ == '__main__':
             box, cnt = find_max_coords(frame2, contours)
             
             keep_yaw(to_180(yaw), 30)
-            keep_depth(depth + 0.1)
+            keep_depth(depth + m)
             time.sleep(0.01)
 
             mur_view.show(img_process(1, frame2, cnt), 1)
@@ -576,7 +571,7 @@ if __name__ == '__main__':
                 if abs(box[0][1] - prev_box[0][1]) > 50:
                     now = time.time()
                     while time.time() - now < 5:
-                        stab(up, down, yaw)
+                        stab(up, down, yaw, depth)
                     break
             prev_box = box
         counter += 1
@@ -600,7 +595,7 @@ if __name__ == '__main__':
             box, cnt = find_max_coords(frame2, contours)
             
             keep_yaw(to_180(yaw), 30)
-            keep_depth(depth + 0.1)
+            keep_depth(depth + m)
             time.sleep(0.01)
 
             mur_view.show(img_process(1, frame2, cnt), 1)
@@ -609,7 +604,7 @@ if __name__ == '__main__':
                 if abs(box[0][1] - prev_box[0][1]) > 50:
                     now = time.time()
                     while time.time() - now < 5:
-                        stab(up, down, yaw)
+                        stab(up, down, yaw, depth)
                     break
             prev_box = box
         counter += 1
@@ -624,13 +619,11 @@ if __name__ == '__main__':
         # Едем вперед
         prev_box = []
         while True:
-            _, frame2 = video2.read()
-
             contours = find_contours(frame2, color_orange)
             box, cnt = find_max_coords(frame2, contours)
             
             keep_yaw(to_180(yaw), 30)
-            keep_depth(depth + 0.1)
+            keep_depth(depth + m)
             time.sleep(0.01)
 
             mur_view.show(img_process(1, frame2, cnt), 1)
@@ -639,7 +632,7 @@ if __name__ == '__main__':
                 if abs(box[0][1] - prev_box[0][1]) > 50:
                     now = time.time()
                     while time.time() - now < 5:
-                        stab(up, down, yaw)
+                        stab(up, down, yaw, depth)
                     break
             prev_box = box
         counter += 1
@@ -656,3 +649,7 @@ if __name__ == '__main__':
     auv.set_motor_power(1, 0)
     auv.set_motor_power(2, 0)
     auv.set_motor_power(3, 0)
+    
+    
+    
+    
