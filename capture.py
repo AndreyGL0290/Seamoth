@@ -8,14 +8,19 @@ from shape import find_contours
 
 with mss.mss() as sct:
 
-    # monitor = {"top": 115, "left": 1162, "width": 558, "height": 410} # Для ноутбука без доп экрана
-    monitor = {"top": 115, "left": -749, "width": 541, "height": 406} # Для ноутбука с доп экраном
+    monitor = {"top": 540, "left": 1162, "width": 558, "height": 410} # Для ноутбука без доп экрана
+    # monitor = {"top": 115, "left": -749, "width": 541, "height": 406} # Для ноутбука с доп экраном
     circles = 0
+    rects = 0
     frames = 0
     n = 1
     while "Screen capturing":
         frames += 1
         img = np.array(sct.grab(monitor))
+        height = len(img)
+        width = len(img[0])
+        # img = img[height//2-20:height//2+20, width//2-20:width//2+20]
+        img = img
         drawing = img.copy()
         # Черный
         # color = (
@@ -24,9 +29,15 @@ with mss.mss() as sct:
         # )
         
         # Белый
+        # color = (
+        #     (20, 0, 0),
+        #     (180, 255, 255)
+        # )
+
+        # Оранжевый
         color = (
-            (10, 0, 20),
-            (160, 30, 80)
+            ( 15, 20,  20),
+            ( 25, 255, 255)
         )
 
         contours = find_contours(img, color)
@@ -79,6 +90,7 @@ with mss.mss() as sct:
 
                 if shape_name == 'rectangle' or shape_name == 'square':
                     cv2.drawContours(drawing, [box], 0, line_color, 2, cv2.LINE_AA)
+                    rects += 1
 
                 # вычислим центр, нарисуем в центре окружность и ниже подпишем
                 # текст с именем фигуры, которая наиболее похожа на исследуемый контур.
@@ -102,8 +114,10 @@ with mss.mss() as sct:
     # показываем кадр в окне ’Video’
         cv2.imshow('Video', img)
         if frames == 300 * n:
-            print(circles//frames)
+            # print(circles//frames)
+            print(rects//frames)
             circles = 0
+            rects = 0
             frames = 0
     # организуем выход из цикла по нажатию клавиши,
     # ждем 30 миллисекунд нажатие, записываем код
